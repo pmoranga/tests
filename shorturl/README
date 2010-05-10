@@ -1,0 +1,13 @@
+Short URL
+
+Made using python + django, for practice.
+
+After checkout, need to create database:
+./manage.py syncdb
+
+Things that need to be reviewed:
+- When a hash is used until the end, it will overwrite the last hash.
+- Print full url with domain name.
+
+Author: pmoranga at gmail dot com
+Created: 2010/05

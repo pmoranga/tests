@@ -1,0 +1,13 @@
+<h1>Adicione uma nova URL</h1>
+
+{% if error_message %} <p> <strong>{{error_message}}</strong></p>{% endif %}
+
+<form action="/" method="post">
+  <input name="full_url" value="{{ u.full_url }}" /> 
+  <input type="submit" value="Add"/> 
+  <input value="{{u.short_url }}" READONLY />
+</form>
+
+{% if u %}
+  <a href="{{burl}}/{{u.short_url}}">{{burl}}/{{u.short_url}}</a>
+{%endif%}
