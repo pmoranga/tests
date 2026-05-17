@@ -3,12 +3,20 @@ name: Build and Push keel-telegram-bot Image
 on:
   workflow_dispatch:
     inputs:
+      source_repo:
+        description: "Source repo (owner/name)"
+        required: true
+        default: "markusressel/keel-telegram-bot"
+      source_ref:
+        description: "Branch/tag/commit to build"
+        required: true
+        default: "master"
       image_name:
-        description: "Image name (without registry), e.g. keel-telegram-bot"
+        description: "Image name under ghcr.io/<owner>/"
         required: true
         default: "keel-telegram-bot"
       image_tag:
-        description: "Tag to publish (e.g. arm64, latest, v1.2.3)"
+        description: "Tag to publish"
         required: true
         default: "arm64"
       platforms:
@@ -34,8 +42,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout this workflow repo
         uses: actions/checkout@v4
+
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.source_repo }}
+          ref: ${{ inputs.source_ref }}
+          path: source
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -59,22 +74,19 @@ jobs:
           if [[ "${{ inputs.push_latest }}" == "true" ]]; then
             TAGS="${TAGS},${IMAGE}:latest"
           fi
-
           echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
 
           TAGS_BULLET="$(echo "$TAGS" | tr ',' '\n' | sed 's/^/- /')"
           {
-            echo "### 🚀 Container Build Requested"
+            echo "### 🚀 Build Requested"
             echo ""
             echo "| Field | Value |"
             echo "|---|---|"
-            echo "| Repository | \`${{ github.repository }}\` |"
-            echo "| Commit | \`${{ github.sha }}\` |"
-            echo "| Actor | \`${{ github.actor }}\` |"
-            echo "| Image Base | \`${IMAGE}\` |"
+            echo "| Source repo | \`${{ inputs.source_repo }}\` |"
+            echo "| Source ref | \`${{ inputs.source_ref }}\` |"
+            echo "| Image base | \`${IMAGE}\` |"
             echo "| Platforms | \`${{ inputs.platforms }}\` |"
-            echo "| Push latest | \`${{ inputs.push_latest }}\` |"
             echo ""
             echo "#### Tags to push"
             echo "$TAGS_BULLET"
@@ -84,8 +96,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./source
+          file: ./source/Dockerfile
           push: true
           platforms: ${{ inputs.platforms }}
           tags: ${{ steps.prep.outputs.tags }}
@@ -105,7 +117,6 @@ jobs:
             echo "|---|---|"
             echo "| Outcome | \`${{ job.status }}\` |"
             echo "| Digest | \`${{ steps.build.outputs.digest }}\` |"
-            echo "| Run URL | https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} |"
             echo ""
             echo "#### Published tags"
             echo "$TAGS_BULLET"
